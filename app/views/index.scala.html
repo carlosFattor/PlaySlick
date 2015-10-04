@@ -1,7 +1,40 @@
-@(message: String)
+@main("Ticket Overlord") {
+    <script type="text/javascript">
+        $(document).ready(function(){
 
-@main("Welcome to Play") {
+        // connect to ticketsAvailable endpoint
+        var ticketsAvail = jsRoutes.controllers.Tickets.ticketsAvailable();
 
-    @play20.welcome(message)
+        ticketsAvail.ajax({
+            success: function(result) {
+                var qty = result.ticketQuantity;
+
+                // Set the pluralization of the result
+                var areVsIs = 'are ';
+                var plural = 's';
+                if (qty === 1) {
+                    areVsIs = 'is ';
+                    plural = '';
+                }
+
+                var display = 'There ' + areVsIs +
+                	qty + ' ticket' +
+                    plural + ' available!';
+
+                // Write display var to ticketsAvailable span
+                $("#ticketsAvailable").text(display);
+            },
+            failure: function(err) {
+                var errorText = 'There was an error';
+                // Write errorText to ticketsAvailable span
+                $("#ticketsAvailable").text(errorText);
+            }
+        });
+
+        });
+    </script>
+
+    You want to go see a show?
+    <span id="ticketsAvailable"></span>
 
 }

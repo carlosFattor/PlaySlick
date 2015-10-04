@@ -3,7 +3,21 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
+GET        /                          controllers.Application.index
+
+GET        /tickets/available/        controllers.TicketsControl.ticketsAvailable
+
+GET        /jsr                       controllers.Application.jsRoutes
+
+# Event Resource
+POST    /events/                    controllers.EventsControl.create
+GET     /events/                    controllers.EventsControl.list
+GET     /events/:eventID/           controllers.EventsControl.getByID(eventID: java.util.UUID)
+
+# Ticket Block Resource
+POST    /tickets/blocks/            controllers.TicketsControl.create
+GET     /tickets/blocks/            controllers.TicketsControl.list
+GET     /tickets/blocks/:blockID/   controllers.TicketsControl.getByID(blockID: java.util.UUID)
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
+GET        /assets/*file              controllers.Assets.versioned(path="/public", file: Asset)

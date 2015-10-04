@@ -1,12 +1,18 @@
 package controllers
 
-import play.api._
 import play.api.mvc._
+import play.api.routing.JavaScriptReverseRouter
 
 class Application extends Controller {
 
   def index = Action {
-    Ok(views.html.index("Your new application is ready."))
+    Ok(views.html.index())
   }
 
+  def jsRoutes = Action { implicit request =>
+    Ok(
+      JavaScriptReverseRouter("jsRoutes")(
+        routes.javascript.TicketsControl.ticketsAvailable
+      )).as("text/javascript")
+  }
 }

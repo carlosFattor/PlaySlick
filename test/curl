@@ -1,0 +1,19 @@
+curl -w '\n' http://localhost:9000/tickets/available/
+
+curl -w '\n' -i http://localhost:9000/tickets/available/
+
+add event
+curl -w '\n' http://localhost:9000/events/   -H "Content-Type:application/json"
+-d '{"name":"Austin Satay Limits","start":1443801600000,"end":1444017600000, "address":"456 Skewer Ave",
+"city":"Austin","state":"TX","country":"US"}'
+
+list event
+curl -w '\n' localhost:9000/events/ee78e3de-82c7-4af6-a18d-7ab11ea19a39/
+
+add block
+curl -w '\n' http://localhost:9000/tickets/blocks/   -H "Content-Type:application/json"
+-d '{"name":"General Admission","eventID":"ee78e3de-82c7-4af6-a18d-7ab11ea19a39","productCode":"GA0001",
+"price":375.00,"initialSize":1000,"saleStart":1420660800000,"saleEnd":1397746800000}'
+
+list block's
+curl -w '\n' http://localhost:9000/tickets/blocks/
