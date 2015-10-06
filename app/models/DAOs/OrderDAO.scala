@@ -10,6 +10,9 @@ import slick.lifted.TableQuery
 /**
  * Created by carlos on 03/10/15.
  */
-class OrderDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider) extends GenericCRUD[OrderTable, Order]{
+class OrderDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
+  extends GenericCRUD[OrderTable, Order]{
+
   override val table = TableQuery[OrderTable]
+
 }

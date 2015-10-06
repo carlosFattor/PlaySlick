@@ -17,3 +17,9 @@ curl -w '\n' http://localhost:9000/tickets/blocks/   -H "Content-Type:applicatio
 
 list block's
 curl -w '\n' http://localhost:9000/tickets/blocks/
+
+add order
+curl -w '\n' http://localhost:9000/orders/   -H "Content-Type:application/json"   -d '{"ticketBlockID":"494def48-317c-43ba-b7b0-d8ab7603912d","customerName":"Rutiger Simpson","customerEmail":"rutiger@semisafe.com", "ticketQuantity":3}'
+
+adding order availability quantity
+curl -w '\n' http://localhost:9000/orders/   -H "Content-Type:application/json"   -d '{"ticketBlockID":"c3aa2dba-6849-4d74-b632-63bc2c5a6188","customerName":"Walter Bishop","customerEmail":"wbishop@bannedrobotics.com", "ticketQuantity":3}'

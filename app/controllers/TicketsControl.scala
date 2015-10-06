@@ -51,11 +51,11 @@ class TicketsControl @Inject()(ticketDAO: TicketBlockDAO) extends Controller {
       Future.successful(BadRequest(Json.toJson(response)))
     }, { ticketBlock =>
       // save ticket block and get a copy back
-      val createdBlockFuture: Future[UUID] = ticketDAO.create(ticketBlock)
+      val createdBlockFuture: Future[TicketBlock] = ticketDAO.createTicketBlock(ticketBlock)
 
-      createdBlockFuture.map { uuid =>
-        val tb = ticketBlock.copy(id = Option(uuid))
-        Created(Json.toJson(tb))
+      createdBlockFuture.map { createdBlock =>
+
+        Created(Json.toJson(createdBlock))
       }
     })
   }

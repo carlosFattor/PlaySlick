@@ -1,7 +1,6 @@
 package models
 
 import java.util.UUID
-
 import models.DAOs.GenericTable
 import org.joda.time.DateTime
 import play.api.Play
@@ -18,7 +17,7 @@ case class Order(id: Option[UUID],
                  customerName: String,
                  customerEmail: String,
                  ticketQuantity: Int,
-                 timestamp: Option[DateTime])
+                 timestamp: Option[DateTime] = Option(new DateTime()))
 
 object Order {
   implicit val format: Format[Order] = Json.format[Order]
@@ -26,12 +25,12 @@ object Order {
   protected val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
   import dbConfig.driver.api._
 
-  class OrderTable(tag: Tag) extends GenericTable[Order](tag, "order"){
+  class OrderTable(tag: Tag) extends GenericTable[Order](tag, "orders"){
     override def id = column[UUID]("id", O.PrimaryKey, O.AutoInc)
-    def ticketBlockID = column[UUID]("ticketBlockID")
-    def customerName = column[String]("customerName")
-    def customerEmail = column[String]("customerEmail")
-    def ticketQuantity = column[Int]("ticketQuantity")
+    def ticketBlockID = column[UUID]("ticket_block_id")
+    def customerName = column[String]("customer_name")
+    def customerEmail = column[String]("customer_email")
+    def ticketQuantity = column[Int]("ticket_quantity")
     def timestamp = column[DateTime]("timestamp")
 
     def ticketBlock = foreignKey("o_ticket_tblock", ticketBlockID, TicketBlock.table)(_.id)
@@ -39,4 +38,6 @@ object Order {
     def * = (id.?, ticketBlockID, customerName, customerEmail, ticketQuantity, timestamp.?) <>
       ((Order.apply _).tupled, Order.unapply)
   }
+
+  val table = TableQuery[OrderTable]
 }
