@@ -23,3 +23,5 @@ curl -w '\n' http://localhost:9000/orders/   -H "Content-Type:application/json" 
 
 adding order availability quantity
 curl -w '\n' http://localhost:9000/orders/   -H "Content-Type:application/json"   -d '{"ticketBlockID":"c3aa2dba-6849-4d74-b632-63bc2c5a6188","customerName":"Walter Bishop","customerEmail":"wbishop@bannedrobotics.com", "ticketQuantity":3}'
+
+curl -w '\n' http://localhost:9000/tickets/blocks/   -H "Content-Type:application/json"   -d '{"name":"VIP Admission","eventID":"ee78e3de-82c7-4af6-a18d-7ab11ea19a39","productCode":"VIP0001", "price":975.00,"initialSize":1000,"saleStart":1420660800000,"saleEnd":1397746800000}'

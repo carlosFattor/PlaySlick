@@ -23,7 +23,7 @@ import play.api.Play.current
  */
 class OrderControl @Inject()(orderDAO: OrderDAO, ticketBlockDAO: TicketBlockDAO) extends Controller {
 
-  val issuer = Akka.system.actorOf(Props[TicketIssuer], name = "ticketIssuer")
+  //val issuer = TicketIssuer.getSelection
 
   def list = Action.async { request =>
     val orders = orderDAO.list
@@ -52,19 +52,22 @@ class OrderControl @Inject()(orderDAO: OrderDAO, ticketBlockDAO: TicketBlockDAO)
       val response = ErrorResponse(ErrorResponse.INVALID_JSON, errorMSG)
       Future.successful(BadRequest(Json.toJson(response)))
     }, { order =>
+
       val timeoutKey = "PlaySlick.timeouts.issuer"
       val configuredTimeout = current.configuration.getInt(timeoutKey)
       val resolvedTimeout = configuredTimeout.getOrElse(5)
       implicit val timeout = Timeout(resolvedTimeout.seconds)
 
+      val issuer = TicketIssuer.getSelection
       val orderFuture = (issuer ? order).mapTo[Order]
+
       orderFuture.map { createdOrder =>
         Ok(Json.toJson(SuccessResponse(createdOrder)))
       }.recover({
         case ita: InsufficientTicketsAvailable => {
           val responseMessage =
             "There are not enough tickets remaining to complete this order." +
-              s" Quantity Remaining: ${ita.ticketsAvailable}"
+              s" Quantity Remaining: $ita.ticketsAvailable"
 
           val response = ErrorResponse(
             ErrorResponse.NOT_ENOUGH_TICKETS,
@@ -82,13 +85,13 @@ class OrderControl @Inject()(orderDAO: OrderDAO, ticketBlockDAO: TicketBlockDAO)
           BadRequest(Json.toJson(response))
         }
         case unexpected => {
-            Logger.error(
-            s"Unexpected error while placing an order: ${unexpected.toString}")
-            val response = ErrorResponse(
+          Logger.error(
+            s"Unexpected error while placing an order: $unexpected.toString")
+          val response = ErrorResponse(
             INTERNAL_SERVER_ERROR,
             "An unexpected error occurred")
 
-            InternalServerError(Json.toJson(response))
+          InternalServerError(Json.toJson(response))
         }
       })
     })

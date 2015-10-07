@@ -1,54 +1,102 @@
 package actor
 
 import java.util.UUID
-import javax.inject.Inject
 
-import akka.actor.{Props, ActorRef, Actor}
+import akka.actor.Actor
 import models.DAOs.{OrderDAO, TicketBlockDAO}
-import models.{TicketBlock, Order}
-import utils.{TicketBlockUnavailable, InsufficientTicketsAvailable, OrderRoutingException}
+import models.Order
 import akka.actor.Status.{Failure => ActorFailure}
+import utils.{TicketBlockUnavailable, InsufficientTicketsAvailable, OrderRoutingException}
 import scala.concurrent.ExecutionContext.Implicits._
 
 /**
- * Created by carlos on 05/10/15.
+ * Created by carlos on 06/10/15.
  */
-class TicketIssuerWorker @Inject()(ticketBlockID: UUID, ticketBlockDAO: TicketBlockDAO, orderDAO: OrderDAO) extends Actor {
-
-  var workers = Map[UUID, ActorRef]()
+class TicketIssuerWorker(ticketBlockID: UUID, ticketBlockDAO: TicketBlockDAO, orderDAO: OrderDAO) extends Actor {
 
   override def preStart = {
-    val ticketBlockResult = ticketBlockDAO.list
+    val availabilityFuture = ticketBlockDAO.availability(ticketBlockID)
 
-    for {
-      ticketBlocks <- ticketBlockResult
-      block <- ticketBlocks
-      id <- block.id
-    } createWorker(id)
-  }
-
-  def createWorker(ticketblockID: UUID) {
-    if (!workers.contains(ticketBlockID)) {
-      val worker = context.actorOf(Props(classOf[TicketIssuerWorker], ticketBlockID), name = ticketBlockID.toString)
-      workers = workers + (ticketBlockID -> worker)
+    availabilityFuture.onSuccess {
+      case result => self ! AddTickets(result)
     }
   }
 
-  def placeOrder(order: Order): Unit = {
-    val workerRef = workers.get(order.ticketBlockID)
+  def validateRouting(requestedID: UUID) = {
+    if (ticketBlockID != requestedID) {
 
-    workerRef.fold {
-      sender ! ActorFailure(TicketBlockUnavailable(order.ticketBlockID))
-    } { worker =>
-      worker forward order
+      val msg = s"IssuerWorker #$ticketBlockID recieved " +
+        s"an order for Ticket Block $requestedID"
+
+      sender ! ActorFailure(new OrderRoutingException(msg))
+      false
+    } else {
+      true
     }
   }
 
-  def receive = {
-    case order: Order => placeOrder(order)
-    case TicketBlockCreated(t) => t.id.foreach(createWorker)
+  def initializing: Actor.Receive = {
+    case AddTickets(availability) => {
+      context.become(normalOperation(availability))
+    }
+    case order: Order => {
+      if (validateRouting(order.ticketBlockID)) {
+        val failureResponse = TicketBlockUnavailable(
+          order.ticketBlockID)
+
+        sender ! ActorFailure(failureResponse)
+      }
+    }
+
   }
 
+  def normalOperation(availability: Int): Actor.Receive = {
+    case AddTickets(newQuantity) => {
+      context.become(normalOperation(availability + newQuantity))
+    }
+    case order: Order => placeOrder(order, availability)
+  }
+
+  def soldOut: Actor.Receive = {
+    case AddTickets(availability) => {
+      context.become(normalOperation(availability))
+    }
+    case order: Order => {
+      if (validateRouting(order.ticketBlockID)) {
+        val failureResponse = InsufficientTicketsAvailable(
+          order.ticketBlockID, 0)
+
+        sender ! ActorFailure(failureResponse)
+      }
+    }
+  }
+
+  def placeOrder(order: Order, availability: Int): Unit = {
+    val origin = sender()
+
+    if (validateRouting(order.ticketBlockID)) {
+      val msg = s"IssuerWorker #$ticketBlockID recieved " +
+        s"an order for Ticket Block ${order.ticketBlockID}"
+      if (validateRouting(order.ticketBlockID)) {
+        if (availability >= order.ticketQuantity) {
+          val newAvailability = availability - order.ticketQuantity
+          context.become(normalOperation(newAvailability))
+
+          val createdOrder = orderDAO.create(order)
+
+          createdOrder.map(origin ! _)
+        } else {
+          val failureResponse = InsufficientTicketsAvailable(
+            order.ticketBlockID,
+            availability)
+
+          origin ! ActorFailure(failureResponse)
+        }
+      }
+    }
+  }
+
+  def receive = initializing
 }
 
-case class TicketBlockCreated(ticketBlock: TicketBlock)
+case class AddTickets(quantity: Int)

@@ -67,5 +67,4 @@ class TicketBlockDAO @Inject()(orderDAO: OrderDAO, protected val dbConfigProvide
       createdBlock
     }
   }
-
 }

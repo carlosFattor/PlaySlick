@@ -1,37 +1,63 @@
 package actor
 
-import akka.actor.Actor
-import com.google.inject.Inject
+import java.util.UUID
+import javax.inject.Inject
+import akka.actor.Status.{Failure => ActorFailure}
+import akka.actor.{Actor, ActorRef, Props}
 import models.DAOs.{OrderDAO, TicketBlockDAO}
-import models.Order
-import utils.InsufficientTicketsAvailable
+import models.{Order, TicketBlock}
+import play.libs.Akka
+import utils.TicketBlockUnavailable
 import scala.concurrent.ExecutionContext.Implicits._
-import akka.actor.Status.{ Failure => ActorFailure }
+
 
 /**
- * Created by carlos on 05/10/15.
+ * Created by carlos on 06/10/15.
  */
 class TicketIssuer @Inject()(ticketBlockDAO: TicketBlockDAO, orderDAO: OrderDAO) extends Actor{
 
-  def placeOrder(order: Order): Unit ={
-    val origin = sender
+  var workers = Map[UUID, ActorRef]()
 
-    val availabilityResult = ticketBlockDAO.availability(order.ticketBlockID)
-    availabilityResult.map{ availability =>
-      if(availability >= order.ticketQuantity){
-        val createdOrderIDResult = orderDAO.create(order)
-        createdOrderIDResult.map{ uuid =>
-          val createdOrder = order.copy(id = Option(uuid))
-          origin ! createdOrder
-        }
-      } else {
-        val failureResponse = InsufficientTicketsAvailable(order.ticketBlockID, availability)
-        origin ! ActorFailure(failureResponse)
-      }
+  override def preStart = {
+    val ticketBlocksResult = ticketBlockDAO.list
+
+    for {
+      ticketBlocks <- ticketBlocksResult
+      block <- ticketBlocks
+      id <- block.id
+    } createWorker(id)
+  }
+
+  def createWorker(ticketBlockID: UUID): Unit ={
+    if(!workers.contains(ticketBlockID)){
+      val worker = context.actorOf(Props(classOf[TicketIssuerWorker], ticketBlockID), name = ticketBlockID.toString)
+      workers = workers + (ticketBlockID -> worker)
+    }
+  }
+
+  def placeOrder(order: Order)= {
+    val workerRef = workers.get(order.ticketBlockID)
+
+    workerRef.fold{
+      sender ! ActorFailure(TicketBlockUnavailable(order.ticketBlockID))
+    }{ worker =>
+      worker forward order
     }
   }
 
   def receive = {
     case order: Order => placeOrder(order)
+    case TicketBlockCreated(t) => t.id.foreach(createWorker)
   }
+
+}
+
+case class TicketBlockCreated(ticketBlock: TicketBlock)
+
+object TicketIssuer {
+  def props = Props[TicketIssuer]
+
+  private val reference = Akka.system.actorOf(TicketIssuer.props, name = "ticketIssuer")
+
+  def getSelection = Akka.system.actorSelection("/user/ticketIssuer")
 }
