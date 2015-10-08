@@ -67,4 +67,11 @@ class TicketBlockDAO @Inject()(orderDAO: OrderDAO, protected val dbConfigProvide
       createdBlock
     }
   }
+
+  def listForEvent(eventID: UUID): Future[Seq[TicketBlock]] = {
+    val blockList = table.filter { tb =>
+      tb.eventID === eventID
+    }.result
+    db.run(blockList)
+  }
 }

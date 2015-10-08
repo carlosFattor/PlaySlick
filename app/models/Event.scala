@@ -11,18 +11,15 @@ import utils.SlickMapping.jodaDateTimeMapping
 
 import slick.driver.JdbcProfile
 
+import scala.concurrent.Future
+
 /**
  * Created by carlos on 03/10/15.
  */
-case class Event(
-                  id: Option[UUID],
-                  name: String,
-                  start: DateTime,
-                  end: DateTime,
-                  address: String,
-                  city: String,
-                  state: String,
-                  country: String)
+case class Event(id: Option[UUID], name: String, start: DateTime, end: DateTime,
+                 address: String, city: String, state: String, country: String) {
+}
+
 object Event {
   implicit val format: Format[Event] = Json.format[Event]
 

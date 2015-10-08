@@ -2,10 +2,12 @@ package models.DAOs
 
 import javax.inject.{Inject, Singleton}
 
-import models.Event
+import models.{TicketBlock, Event}
 import models.Event.EventTable
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.TableQuery
+
+import scala.concurrent.Future
 
 /**
  * Created by carlos on 03/10/15.

@@ -76,7 +76,7 @@ class TicketIssuerWorker(ticketBlockID: UUID, ticketBlockDAO: TicketBlockDAO, or
 
     if (validateRouting(order.ticketBlockID)) {
       val msg = s"IssuerWorker #$ticketBlockID recieved " +
-        s"an order for Ticket Block ${order.ticketBlockID}"
+        s"an order for Ticket Block $order.ticketBlockID"
       if (validateRouting(order.ticketBlockID)) {
         if (availability >= order.ticketQuantity) {
           val newAvailability = availability - order.ticketQuantity

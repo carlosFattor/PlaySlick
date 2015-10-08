@@ -45,14 +45,26 @@ class TicketIssuer @Inject()(ticketBlockDAO: TicketBlockDAO, orderDAO: OrderDAO)
     }
   }
 
+  def checkAvailability(message: AvailabilityCheck) = {
+    val workerRef = workers.get(message.eventID)
+
+    workerRef.fold {
+      sender ! ActorFailure(TicketBlockUnavailable(message.eventID))
+    } { worker =>
+      worker forward message
+    }
+  }
+
   def receive = {
     case order: Order => placeOrder(order)
+    case a: AvailabilityCheck => checkAvailability(a)
     case TicketBlockCreated(t) => t.id.foreach(createWorker)
   }
 
 }
 
 case class TicketBlockCreated(ticketBlock: TicketBlock)
+case class AvailabilityCheck(eventID: UUID)
 
 object TicketIssuer {
   def props = Props[TicketIssuer]

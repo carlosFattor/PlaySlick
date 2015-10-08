@@ -58,7 +58,9 @@ class OrderControl @Inject()(orderDAO: OrderDAO, ticketBlockDAO: TicketBlockDAO)
       val resolvedTimeout = configuredTimeout.getOrElse(5)
       implicit val timeout = Timeout(resolvedTimeout.seconds)
 
+      //get reference to Actor System
       val issuer = TicketIssuer.getSelection
+
       val orderFuture = (issuer ? order).mapTo[Order]
 
       orderFuture.map { createdOrder =>

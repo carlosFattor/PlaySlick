@@ -3,7 +3,7 @@ package controllers
 import java.util.UUID
 import javax.inject.Inject
 
-import models.DAOs.TicketBlockDAO
+import models.DAOs.{EventDAO, TicketBlockDAO}
 import models.TicketBlock
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
